@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"github.com/joy-currency-conversion-private/domain"
 	"github.com/joy-currency-conversion-private/infrastructure"
 )
@@ -24,54 +24,39 @@ func NewCurrencyHandler(awsServices *infrastructure.AWSServices) *CurrencyHandle
 
 // Convert handles currency conversion requests
 // GET /api/v1/convert?origin={ORIGIN}&destination={DEST}&amount={AMOUNT}
-func (h *CurrencyHandler) Convert(c *gin.Context) {
-	origin := c.Query("origin")
-	destination := c.Query("destination")
-	amountStr := c.Query("amount")
+func (h *CurrencyHandler) Convert(w http.ResponseWriter, r *http.Request) {
+	origin := r.URL.Query().Get("origin")
+	destination := r.URL.Query().Get("destination")
+	amountStr := r.URL.Query().Get("amount")
 
 	if origin == "" || destination == "" || amountStr == "" {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Missing required parameters: origin, destination, amount",
-			Code:  "MISSING_PARAMETERS",
-		})
+		JSONError(w, http.StatusBadRequest, "Missing required parameters: origin, destination, amount", "MISSING_PARAMETERS")
 		return
 	}
 
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil || amount <= 0 {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid amount parameter",
-			Code:  "INVALID_AMOUNT",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid amount parameter", "INVALID_AMOUNT")
 		return
 	}
 
 	// Get exchange rate
-	rate, source, err := h.awsServices.CurrencyService.GetExchangeRate(c.Request.Context(), origin, destination)
+	rate, source, err := h.awsServices.CurrencyService.GetExchangeRate(r.Context(), origin, destination)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
-			Error: "Unable to get exchange rate",
-			Code:  "RATE_UNAVAILABLE",
-		})
+		JSONError(w, http.StatusUnprocessableEntity, "Unable to get exchange rate", "RATE_UNAVAILABLE")
 		return
 	}
 
 	// Get currency information
-	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(c.Request.Context(), origin)
+	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), origin)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid origin currency",
-			Code:  "INVALID_ORIGIN",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid origin currency", "INVALID_ORIGIN")
 		return
 	}
 
-	destCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(c.Request.Context(), destination)
+	destCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), destination)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid destination currency",
-			Code:  "INVALID_DESTINATION",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid destination currency", "INVALID_DESTINATION")
 		return
 	}
 
@@ -85,69 +70,51 @@ func (h *CurrencyHandler) Convert(c *gin.Context) {
 		RatesSource:     source,
 	}
 
-	c.JSON(http.StatusOK, response)
+	JSONResponse(w, http.StatusOK, response)
 }
 
 // History handles historical exchange rate requests
 // GET /api/v1/history?origin={ORIGIN}&destination={DEST}&start_date={YYYY-MM-DD}&end_date={YYYY-MM-DD}
-func (h *CurrencyHandler) History(c *gin.Context) {
-	origin := c.Query("origin")
-	destination := c.Query("destination")
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
+func (h *CurrencyHandler) History(w http.ResponseWriter, r *http.Request) {
+	origin := r.URL.Query().Get("origin")
+	destination := r.URL.Query().Get("destination")
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
 
 	if origin == "" || destination == "" || startDateStr == "" || endDateStr == "" {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Missing required parameters: origin, destination, start_date, end_date",
-			Code:  "MISSING_PARAMETERS",
-		})
+		JSONError(w, http.StatusBadRequest, "Missing required parameters: origin, destination, start_date, end_date", "MISSING_PARAMETERS")
 		return
 	}
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid start_date format. Use YYYY-MM-DD",
-			Code:  "INVALID_DATE_FORMAT",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid start_date format. Use YYYY-MM-DD", "INVALID_DATE_FORMAT")
 		return
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid end_date format. Use YYYY-MM-DD",
-			Code:  "INVALID_DATE_FORMAT",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid end_date format. Use YYYY-MM-DD", "INVALID_DATE_FORMAT")
 		return
 	}
 
 	// Get currency information
-	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(c.Request.Context(), origin)
+	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), origin)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid origin currency",
-			Code:  "INVALID_ORIGIN",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid origin currency", "INVALID_ORIGIN")
 		return
 	}
 
-	destCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(c.Request.Context(), destination)
+	destCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), destination)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid destination currency",
-			Code:  "INVALID_DESTINATION",
-		})
+		JSONError(w, http.StatusBadRequest, "Invalid destination currency", "INVALID_DESTINATION")
 		return
 	}
 
 	// Get historical rates
-	rates, source, err := h.awsServices.CurrencyService.GetHistoricalRates(c.Request.Context(), origin, destination, startDate, endDate)
+	rates, source, err := h.awsServices.CurrencyService.GetHistoricalRates(r.Context(), origin, destination, startDate, endDate)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
-			Error: "No historical data available",
-			Code:  "NO_DATA_AVAILABLE",
-		})
+		JSONError(w, http.StatusUnprocessableEntity, "No historical data available", "NO_DATA_AVAILABLE")
 		return
 	}
 
@@ -161,137 +128,107 @@ func (h *CurrencyHandler) History(c *gin.Context) {
 		RatesSource: source,
 	}
 
-	c.JSON(http.StatusOK, response)
+	JSONResponse(w, http.StatusOK, response)
 }
 
 // Forecast handles forecast requests
 // GET /api/v1/forecast?origin={ORIGIN}&destination={DEST}
-func (h *CurrencyHandler) Forecast(c *gin.Context) {
-	origin := c.Query("origin")
-	destination := c.Query("destination")
+func (h *CurrencyHandler) Forecast(w http.ResponseWriter, r *http.Request) {
+	origin := r.URL.Query().Get("origin")
+	destination := r.URL.Query().Get("destination")
 
 	if origin == "" || destination == "" {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Missing required parameters: origin, destination",
-			Code:  "MISSING_PARAMETERS",
-		})
+		JSONError(w, http.StatusBadRequest, "Missing required parameters: origin, destination", "MISSING_PARAMETERS")
 		return
 	}
 
-	forecast, err := h.awsServices.CurrencyService.GetForecast(c.Request.Context(), origin, destination)
+	forecast, err := h.awsServices.CurrencyService.GetForecast(r.Context(), origin, destination)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
-			Error: "Insufficient data for forecast",
-			Code:  "INSUFFICIENT_DATA",
-		})
+		JSONError(w, http.StatusUnprocessableEntity, "Insufficient data for forecast", "INSUFFICIENT_DATA")
 		return
 	}
 
-	c.JSON(http.StatusOK, forecast)
+	JSONResponse(w, http.StatusOK, forecast)
 }
 
 // GetDestinations handles available destinations requests
 // GET /api/v1/origins/{origin}/destinations
-func (h *CurrencyHandler) GetDestinations(c *gin.Context) {
-	origin := c.Param("origin")
+func (h *CurrencyHandler) GetDestinations(w http.ResponseWriter, r *http.Request) {
+	origin := chi.URLParam(r, "origin")
 
 	if origin == "" {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Missing origin parameter",
-			Code:  "MISSING_ORIGIN",
-		})
+		JSONError(w, http.StatusBadRequest, "Missing origin parameter", "MISSING_ORIGIN")
 		return
 	}
 
 	// Get currency information
-	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(c.Request.Context(), origin)
+	originCurrency, err := h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), origin)
 	if err != nil {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{
-			Error: "Origin not supported",
-			Code:  "ORIGIN_NOT_SUPPORTED",
-		})
+		JSONError(w, http.StatusNotFound, "Origin not supported", "ORIGIN_NOT_SUPPORTED")
 		return
 	}
 
 	// Get supported destinations
-	destinations, source, err := h.awsServices.CurrencyService.GetSupportedDestinations(c.Request.Context(), origin)
+	destinations, source, err := h.awsServices.CurrencyService.GetSupportedDestinations(r.Context(), origin)
 	if err != nil {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{
-			Error: "No destinations available",
-			Code:  "NO_DESTINATIONS",
-		})
+		JSONError(w, http.StatusNotFound, "No destinations available", "NO_DESTINATIONS")
 		return
 	}
 
 	response := domain.DestinationsResponse{
-		Origin:      *originCurrency,
+		Origin:       *originCurrency,
 		Destinations: destinations,
-		Timestamp:   time.Now().UTC(),
-		RatesSource: source,
+		Timestamp:    time.Now().UTC(),
+		RatesSource:  source,
 	}
 
-	c.JSON(http.StatusOK, response)
+	JSONResponse(w, http.StatusOK, response)
 }
 
 // SaveFavorite handles saving favorite conversions
 // POST /api/v1/favorites
-func (h *CurrencyHandler) SaveFavorite(c *gin.Context) {
+func (h *CurrencyHandler) SaveFavorite(w http.ResponseWriter, r *http.Request) {
 	var req domain.FavoriteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid request body",
-			Code:  "INVALID_REQUEST",
-		})
+	if err := BindJSON(r, &req); err != nil {
+		JSONError(w, http.StatusBadRequest, "Invalid request body", "INVALID_REQUEST")
 		return
 	}
 
-	favorite, err := h.awsServices.FavoriteService.SaveFavorite(c.Request.Context(), &req)
+	favorite, err := h.awsServices.FavoriteService.SaveFavorite(r.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusConflict, domain.ErrorResponse{
-			Error: "Favorite already exists",
-			Code:  "FAVORITE_EXISTS",
-		})
+		JSONError(w, http.StatusConflict, "Favorite already exists", "FAVORITE_EXISTS")
 		return
 	}
 
-	c.JSON(http.StatusCreated, favorite)
+	JSONResponse(w, http.StatusCreated, favorite)
 }
 
 // CheckFavorites handles daily favorite checks
 // POST /api/v1/favorites/check
-func (h *CurrencyHandler) CheckFavorites(c *gin.Context) {
-	results, err := h.awsServices.FavoriteService.CheckFavorites(c.Request.Context())
+func (h *CurrencyHandler) CheckFavorites(w http.ResponseWriter, r *http.Request) {
+	results, err := h.awsServices.FavoriteService.CheckFavorites(r.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{
-			Error: "Failed to check favorites",
-			Code:  "CHECK_FAILED",
-		})
+		JSONError(w, http.StatusInternalServerError, "Failed to check favorites", "CHECK_FAILED")
 		return
 	}
 
-	c.JSON(http.StatusOK, results)
+	JSONResponse(w, http.StatusOK, results)
 }
 
 // SendNotification handles email notifications
 // POST /api/v1/notifications/email
-func (h *CurrencyHandler) SendNotification(c *gin.Context) {
+func (h *CurrencyHandler) SendNotification(w http.ResponseWriter, r *http.Request) {
 	var req domain.NotificationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Error: "Invalid request body",
-			Code:  "INVALID_REQUEST",
-		})
+	if err := BindJSON(r, &req); err != nil {
+		JSONError(w, http.StatusBadRequest, "Invalid request body", "INVALID_REQUEST")
 		return
 	}
 
-	response, err := h.awsServices.NotificationService.SendEmailNotification(c.Request.Context(), &req)
+	response, err := h.awsServices.NotificationService.SendEmailNotification(r.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{
-			Error: "Failed to send email",
-			Code:  "EMAIL_FAILED",
-		})
+		JSONError(w, http.StatusInternalServerError, "Failed to send email", "EMAIL_FAILED")
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	JSONResponse(w, http.StatusOK, response)
 }

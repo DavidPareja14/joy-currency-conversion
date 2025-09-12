@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joy-currency-conversion-private/handlers"
 	"github.com/joy-currency-conversion-private/infrastructure"
 )
@@ -16,41 +18,47 @@ func main() {
 	// Initialize handlers
 	currencyHandler := handlers.NewCurrencyHandler(awsServices)
 
-	// Setup Gin router
-	router := gin.Default()
+	// Setup Chi router
+	router := chi.NewRouter()
 
-	// API v1 routes
-	v1 := router.Group("/api/v1")
-	{
-		// Endpoint 1: Currency Conversion
-		v1.GET("/convert", currencyHandler.Convert)
-
-		// Endpoint 2: Daily Historic Values
-		v1.GET("/history", currencyHandler.History)
-
-		// Endpoint 3: Probability Forecast
-		v1.GET("/forecast", currencyHandler.Forecast)
-
-		// Endpoint 4: Available Destination Currencies
-		v1.GET("/origins/:origin/destinations", currencyHandler.GetDestinations)
-
-		// Endpoint 5: Save a Favorite Conversion
-		v1.POST("/favorites", currencyHandler.SaveFavorite)
-
-		// Endpoint 6: Daily Favorite Check
-		v1.POST("/favorites/check", currencyHandler.CheckFavorites)
-
-		// Endpoint 7: Email Notification
-		v1.POST("/notifications/email", currencyHandler.SendNotification)
-	}
+	// Add middleware
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
 
 	// Health check
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+	})
+
+	// API v1 routes
+	router.Route("/api/v1", func(r chi.Router) {
+		// Endpoint 1: Currency Conversion
+		r.Get("/convert", currencyHandler.Convert)
+
+		// Endpoint 2: Daily Historic Values
+		r.Get("/history", currencyHandler.History)
+
+		// Endpoint 3: Probability Forecast
+		r.Get("/forecast", currencyHandler.Forecast)
+
+		// Endpoint 4: Available Destination Currencies
+		r.Get("/origins/{origin}/destinations", currencyHandler.GetDestinations)
+
+		// Endpoint 5: Save a Favorite Conversion
+		r.Post("/favorites", currencyHandler.SaveFavorite)
+
+		// Endpoint 6: Daily Favorite Check
+		r.Post("/favorites/check", currencyHandler.CheckFavorites)
+
+		// Endpoint 7: Email Notification
+		r.Post("/notifications/email", currencyHandler.SendNotification)
 	})
 
 	log.Println("Starting Project Joy API server on :8080")
-	if err := router.Run(":8080"); err != nil {
+	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }
