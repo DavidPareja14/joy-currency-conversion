@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: Project Joy API
+  version: 1.3.0
+  description: "Full OpenAPI spec for Project Joy, endpoints 1\u20137, with reusable\
+    \ schemas."
+servers:
+- url: /api/v1
+components:
+  schemas:
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          example: COP
+        country:
+          type: string
+          example: Colombia
+    ConversionResponse:
+      type: object
+      properties:
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        rate:
+          type: number
+          example: 0.00025
+        amount:
+          type: number
+          example: 100000
+        converted_amount:
+          type: number
+          example: 25
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-09-07T12:00:00Z'
+        rates_source:
+          type: string
+          description: External provider used for this conversion
+    HistoryRate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2025-09-01'
+        rate:
+          type: number
+          example: 0.00024
+    HistoryResponse:
+      type: object
+      properties:
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        rates:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryRate'
+        timestamp:
+          type: string
+          format: date-time
+        rates_source:
+          type: string
+    ForecastResponse:
+      type: object
+      properties:
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        predicted_date:
+          type: string
+          format: date
+        predicted_rate:
+          type: number
+        confidence:
+          type: number
+        last_30_days:
+          type: object
+          properties:
+            average:
+              type: number
+        timestamp:
+          type: string
+          format: date-time
+        rates_source:
+          type: string
+    DestinationsResponse:
+      type: object
+      properties:
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destinations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Currency'
+        timestamp:
+          type: string
+          format: date-time
+        rates_source:
+          type: string
+    FavoriteRequest:
+      type: object
+      properties:
+        origin:
+          type: string
+        destination:
+          type: string
+        threshold:
+          type: number
+        notify_email:
+          type: string
+      required:
+      - origin
+      - destination
+      - threshold
+      - notify_email
+    FavoriteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        threshold:
+          type: number
+        notify_email:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    FavoriteCheckResult:
+      type: object
+      properties:
+        favorite_id:
+          type: string
+          format: uuid
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        threshold:
+          type: number
+        current_rate:
+          type: number
+        date:
+          type: string
+          format: date
+        exceeded:
+          type: boolean
+        notified:
+          type: boolean
+        current_rate_source:
+          type: string
+    FavoriteCheckResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FavoriteCheckResult'
+        timestamp:
+          type: string
+          format: date-time
+    NotificationRequest:
+      type: object
+      properties:
+        favorite_id:
+          type: string
+          format: uuid
+        origin:
+          $ref: '#/components/schemas/Currency'
+        destination:
+          $ref: '#/components/schemas/Currency'
+        threshold:
+          type: number
+        current_rate:
+          type: number
+        date:
+          type: string
+          format: date
+        notify_email:
+          type: string
+    NotificationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        sent_to:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+paths:
+  /convert:
+    get:
+      summary: Currency Conversion
+      parameters:
+      - name: origin
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: destination
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: amount
+        in: query
+        required: true
+        schema:
+          type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+  /history:
+    get:
+      summary: Daily Historic Values
+      parameters:
+      - name: origin
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: destination
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: start_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: end_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+  /forecast:
+    get:
+      summary: Probability Forecast (Basic)
+      parameters:
+      - name: origin
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: destination
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+  /origins/{origin}/destinations:
+    get:
+      summary: Available Destination Currencies
+      parameters:
+      - name: origin
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DestinationsResponse'
+  /favorites:
+    post:
+      summary: Save a Favorite Conversion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FavoriteRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+  /favorites/check:
+    post:
+      summary: Daily Favorite Check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteCheckResponse'
+  /notifications/email:
+    post:
+      summary: Email Notification on Threshold Exceeded
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
