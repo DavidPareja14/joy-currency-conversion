@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  app:
+    image: currency-conversion
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - EXCHANGE_RATE_API_KEY=${EXCHANGE_RATE_API_KEY}

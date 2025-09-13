@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -29,6 +30,8 @@ func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destinati
 	// - Fixer.io
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
+	
+	fmt.Println("API KEY", os.Getenv("EXCHANGE_RATE_API_KEY"))
 	
 	// For now, return mock data
 	mockRates := map[string]float64{

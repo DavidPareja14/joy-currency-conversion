@@ -163,14 +163,25 @@ For detailed API documentation, see:
 - `joy_openapi.yaml`: OpenAPI 3.0 specification
 - `project_joy_swagger.html`: Interactive API documentation
 
+## Requirements
+
+* I'm using the https://app.exchangerate-api.com/ API to query currencies and perform conversion, when you log in, you receive an API key that you can use when running the application
+* In the currency-conversion root folder, create a .env file. Then set the `EXCHANGE_RATE_API_KEY` variable with the key you received
+
 ## Run the application
 In the root folder, the Dockerfile is defined, it builds the application binary and then uses it in Alpine image.
 
+### Dockerfile (This is not the recommended approach because the .env file is automatically loaded by Docker Compose. In addition, we will need to run more images.)
 You can build the docker image as follows:
 > docker build -t joy-v1 .
 
 Then, you can run the application with the following command. The application will listen on port 8080:
 > docker run -p 8080:8080 joy-v1
+
+### Docker compose (Recommended)
+To run the application locally, I recommend using `docker compose`, it loads the environment variables from the .env file and allows you to build and run all the necessary images
+
+> docker-compose run
 
 ## License
 
