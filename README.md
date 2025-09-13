@@ -163,6 +163,15 @@ For detailed API documentation, see:
 - `joy_openapi.yaml`: OpenAPI 3.0 specification
 - `project_joy_swagger.html`: Interactive API documentation
 
+## Run the application
+In the root folder, the Dockerfile is defined, it builds the application binary and then uses it in Alpine image.
+
+You can build the docker image as follows:
+> docker build -t joy-v1 .
+
+Then, you can run the application with the following command. The application will listen on port 8080:
+> docker run -p 8080:8080 joy-v1
+
 ## License
 
 See LICENSE file for details.

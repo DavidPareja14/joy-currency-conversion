@@ -1,6 +1,6 @@
 module github.com/joy-currency-conversion-private
 
-go 1.21
+go 1.25.1
 
 require (
 	github.com/aws/aws-sdk-go v1.50.0
