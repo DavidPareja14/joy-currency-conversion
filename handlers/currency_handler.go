@@ -41,7 +41,7 @@ func (h *CurrencyHandler) Convert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get exchange rate
-	rate, source, err := h.awsServices.CurrencyService.GetExchangeRate(r.Context(), origin, destination)
+	rateResponse, err := h.awsServices.CurrencyService.GetExchangeRateGivenAmount(r.Context(), origin, destination, amount)
 	if err != nil {
 		JSONError(w, http.StatusUnprocessableEntity, "Unable to get exchange rate", "RATE_UNAVAILABLE")
 		return
@@ -63,11 +63,11 @@ func (h *CurrencyHandler) Convert(w http.ResponseWriter, r *http.Request) {
 	response := domain.ConversionResponse{
 		Origin:          *originCurrency,
 		Destination:     *destCurrency,
-		Rate:            rate,
+		Rate:            rateResponse.ConversionRate,
 		Amount:          amount,
-		ConvertedAmount: amount * rate,
+		ConvertedAmount: rateResponse.ConversionResult,
 		Timestamp:       time.Now().UTC(),
-		RatesSource:     source,
+		RatesSource:     rateResponse.RatesSource,
 	}
 
 	JSONResponse(w, http.StatusOK, response)

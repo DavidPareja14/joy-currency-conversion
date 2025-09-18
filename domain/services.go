@@ -3,12 +3,17 @@ package domain
 import (
 	"context"
 	"time"
+
+	"github.com/joy-currency-conversion-private/infrastructure/response"
 )
 
 // CurrencyService defines the interface for currency-related operations
 type CurrencyService interface {
 	// GetExchangeRate returns the current exchange rate between two currencies
 	GetExchangeRate(ctx context.Context, origin, destination string) (float64, string, error)
+
+	// GetExchangeRateGivenAmount returns the current exchange rate between two currencies given an amount
+	GetExchangeRateGivenAmount(ctx context.Context, origin, destination string, amount float64) (response.ExchangeRateResponse, error)
 	
 	// GetHistoricalRates returns historical exchange rates for a date range
 	GetHistoricalRates(ctx context.Context, origin, destination string, startDate, endDate time.Time) ([]HistoryRate, string, error)

@@ -2,12 +2,16 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/joy-currency-conversion-private/domain"
+	"github.com/joy-currency-conversion-private/infrastructure/response"
 )
 
 // CurrencyService implements domain.CurrencyService using AWS services
@@ -22,6 +26,51 @@ func NewCurrencyService(dynamoDB *dynamodb.DynamoDB) *CurrencyService {
 	}
 }
 
+type exchangeRateResponse struct {
+	ConversionRate float64 `json:"conversion_rate"`
+}
+
+// GetExchangeRate returns the current exchange rate between two currencies
+func (s *CurrencyService) GetExchangeRateGivenAmount(ctx context.Context, origin, destination string, amount float64) (response.ExchangeRateResponse, error) {
+	// TODO: Implement actual exchange rate fetching
+	// This could integrate with external APIs like:
+	// - ExchangeRate-API
+	// - Fixer.io
+	// - CurrencyLayer
+	// - Or store rates in DynamoDB and update them periodically
+	
+	exchangeKey := os.Getenv("EXCHANGE_RATE_API_KEY")
+	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s/%.3f", exchangeKey, origin, destination, amount)
+
+	// Make the GET request
+	resp, err := http.Get(url)
+	if err != nil {
+		return response.ExchangeRateResponse{}, fmt.Errorf("error when get the conversion rate for %s to %s", origin, destination)
+	}
+	defer resp.Body.Close()
+
+	// Check the HTTP status code
+	if resp.StatusCode != http.StatusOK {
+		return response.ExchangeRateResponse{}, fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, resp.Status)
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return response.ExchangeRateResponse{}, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	var exchangeRateResponse response.ExchangeRateResponse
+	err = json.Unmarshal(body, &exchangeRateResponse)
+	if err != nil {
+		return response.ExchangeRateResponse{}, fmt.Errorf("error unmarshalling response body: %v", err)
+	}
+	exchangeRateResponse.RatesSource = "exchange-rate-api"
+
+	return exchangeRateResponse, nil
+}
+
+
 // GetExchangeRate returns the current exchange rate between two currencies
 func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destination string) (float64, string, error) {
 	// TODO: Implement actual exchange rate fetching
@@ -31,9 +80,37 @@ func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destinati
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
 	
-	fmt.Println("API KEY", os.Getenv("EXCHANGE_RATE_API_KEY"))
+	exchangeKey := os.Getenv("EXCHANGE_RATE_API_KEY")
+	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s", exchangeKey, origin, destination)
+
+	// Make the GET request
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, "", fmt.Errorf("error when get the conversion rate for %s to %s", origin, destination)
+	}
+	defer resp.Body.Close()
+
+	// Check the HTTP status code
+	if resp.StatusCode != http.StatusOK {
+		return 0, "", fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, resp.Status)
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, "", fmt.Errorf("error reading response body: %v", err)
+	}
+
+	var exchangeRateResponse exchangeRateResponse
+	err = json.Unmarshal(body, &exchangeRateResponse)
+	if err != nil {
+		return 0, "", fmt.Errorf("error unmarshalling response body: %v", err)
+	}
+
+	return exchangeRateResponse.ConversionRate, "exchange-rate-api", nil
 	
 	// For now, return mock data
+	/*
 	mockRates := map[string]float64{
 		"COP-USD": 0.00025,
 		"USD-COP": 4000.0,
@@ -46,7 +123,9 @@ func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destinati
 		return rate, "mock-provider", nil
 	}
 	
+	
 	return 0, "", fmt.Errorf("exchange rate not available for %s to %s", origin, destination)
+	*/
 }
 
 // GetHistoricalRates returns historical exchange rates for a date range
