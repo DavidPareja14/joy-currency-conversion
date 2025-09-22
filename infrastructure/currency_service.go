@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -17,12 +16,14 @@ import (
 // CurrencyService implements domain.CurrencyService using AWS services
 type CurrencyService struct {
 	dynamoDB *dynamodb.DynamoDB
+	ExchangeRateAPIKey string
 }
 
 // NewCurrencyService creates a new CurrencyService
-func NewCurrencyService(dynamoDB *dynamodb.DynamoDB) *CurrencyService {
+func NewCurrencyService(dynamoDB *dynamodb.DynamoDB, exchangeRateAPIKey string) *CurrencyService {
 	return &CurrencyService{
 		dynamoDB: dynamoDB,
+		ExchangeRateAPIKey: exchangeRateAPIKey,
 	}
 }
 
@@ -39,8 +40,7 @@ func (s *CurrencyService) GetExchangeRateGivenAmount(ctx context.Context, origin
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
 	
-	exchangeKey := os.Getenv("EXCHANGE_RATE_API_KEY")
-	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s/%.3f", exchangeKey, origin, destination, amount)
+	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s/%.3f", s.ExchangeRateAPIKey, origin, destination, amount)
 
 	// Make the GET request
 	resp, err := http.Get(url)
@@ -80,8 +80,7 @@ func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destinati
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
 	
-	exchangeKey := os.Getenv("EXCHANGE_RATE_API_KEY")
-	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s", exchangeKey, origin, destination)
+	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s", s.ExchangeRateAPIKey, origin, destination)
 
 	// Make the GET request
 	resp, err := http.Get(url)

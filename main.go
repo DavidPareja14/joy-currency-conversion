@@ -7,13 +7,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joy-currency-conversion-private/config"
 	"github.com/joy-currency-conversion-private/handlers"
 	"github.com/joy-currency-conversion-private/infrastructure"
 )
 
 func main() {
+	configuratios, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
 	// Initialize AWS services
-	awsServices := infrastructure.NewAWSServices()
+	awsServices := infrastructure.NewAWSServices(configuratios.KyeEchangeRateAPI)
 
 	// Initialize handlers
 	currencyHandler := handlers.NewCurrencyHandler(awsServices)
