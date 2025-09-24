@@ -73,8 +73,15 @@ func (s *FavoriteService) GetAllFavorites(ctx context.Context) ([]domain.Favorit
 	// 2. Unmarshaling the results into domain.Favorite objects
 	// 3. Handling pagination if there are many favorites
 	
-	// For now, return empty slice (mock implementation)
-	return []domain.Favorite{}, nil
+	favorites := make([]domain.Favorite, 0)
+	favorites = append(favorites, domain.Favorite{
+		ID: "abcd",
+		Origin: domain.Currency{Code: "USD", Country: "EE.UU"},
+		Destination: domain.Currency{Code: "COP", Country: "Colombia"},
+		Threshold: 3000,
+		NotifyEmail: "test@gmail.com",
+	})
+	return favorites, nil
 }
 
 // CheckFavorites checks all favorites against current rates

@@ -40,6 +40,7 @@ func (s *CurrencyService) GetExchangeRateGivenAmount(ctx context.Context, origin
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
 	
+	// This was built with https://app.exchangerate-api.com/ api
 	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s/%.3f", s.ExchangeRateAPIKey, origin, destination, amount)
 
 	// Make the GET request
@@ -80,6 +81,7 @@ func (s *CurrencyService) GetExchangeRate(ctx context.Context, origin, destinati
 	// - CurrencyLayer
 	// - Or store rates in DynamoDB and update them periodically
 	
+	// This was built with https://app.exchangerate-api.com/ api
 	url := fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/pair/%s/%s", s.ExchangeRateAPIKey, origin, destination)
 
 	// Make the GET request
@@ -134,6 +136,8 @@ func (s *CurrencyService) GetHistoricalRates(ctx context.Context, origin, destin
 	// - Query DynamoDB for stored historical rates
 	// - Call external APIs for historical data
 	// - Use AWS Lambda to fetch and cache historical data
+
+	// Other client used https://manage.exchangeratesapi.io/
 	
 	// For now, return mock data
 	var rates []domain.HistoryRate
