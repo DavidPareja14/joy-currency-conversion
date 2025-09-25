@@ -28,7 +28,7 @@ type AWSServices struct {
 }
 
 // NewAWSServices creates a new AWSServices instance
-func NewAWSServices(exchangeRateAPIKey string) *AWSServices {
+func NewAWSServices(exchangeRateAPIKey, exchangeRatesAPIKey string) *AWSServices {
 	// Create AWS session
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String("us-east-1"), // Configure your preferred region
@@ -40,8 +40,8 @@ func NewAWSServices(exchangeRateAPIKey string) *AWSServices {
 	sqsClient := sqs.New(sess)
 
 	// Initialize service implementations
-	currencyService := NewCurrencyService(dynamoDB, exchangeRateAPIKey)
-	favoriteService := NewFavoriteService(dynamoDB, exchangeRateAPIKey)
+	currencyService := NewCurrencyService(dynamoDB, exchangeRateAPIKey, exchangeRatesAPIKey)
+	favoriteService := NewFavoriteService(dynamoDB, exchangeRateAPIKey, exchangeRatesAPIKey)
 	notificationService := NewNotificationService(sesClient, sqsClient)
 
 	return &AWSServices{

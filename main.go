@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Initialize AWS services
-	awsServices := infrastructure.NewAWSServices(configuratios.KyeEchangeRateAPI)
+	awsServices := infrastructure.NewAWSServices(configuratios.KyeEchangeRateAPI, configuratios.KyeEchangeRatesAPI)
 
 	// Initialize handlers
 	currencyHandler := handlers.NewCurrencyHandler(awsServices)

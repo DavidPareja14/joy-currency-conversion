@@ -51,6 +51,7 @@ type HistoryResponse struct {
 	Rates       []HistoryRate `json:"rates"`
 	Timestamp   time.Time     `json:"timestamp"`
 	RatesSource string        `json:"rates_source"`
+	Message string `json:"temp_message"`
 }
 
 // ForecastRequest represents the request for forecast

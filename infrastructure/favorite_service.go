@@ -18,13 +18,15 @@ import (
 type FavoriteService struct {
 	dynamoDB *dynamodb.DynamoDB
 	ExchangeRateAPIKey string
+	ExchangeRatesAPIKey string
 }
 
 // NewFavoriteService creates a new FavoriteService
-func NewFavoriteService(dynamoDB *dynamodb.DynamoDB, exchangeRateAPIKey string) *FavoriteService {
+func NewFavoriteService(dynamoDB *dynamodb.DynamoDB, exchangeRateAPIKey, exchangeRatesAPIKey string) *FavoriteService {
 	return &FavoriteService{
 		dynamoDB: dynamoDB,
 		ExchangeRateAPIKey: exchangeRateAPIKey,
+		ExchangeRatesAPIKey: exchangeRatesAPIKey,
 	}
 }
 
@@ -34,7 +36,7 @@ func (s *FavoriteService) SaveFavorite(ctx context.Context, req *domain.Favorite
 	id := uuid.New().String()
 	
 	// Get currency information
-	currencyService := NewCurrencyService(s.dynamoDB, s.ExchangeRateAPIKey)
+	currencyService := NewCurrencyService(s.dynamoDB, s.ExchangeRateAPIKey, s.ExchangeRatesAPIKey)
 	originCurrency, err := currencyService.GetCurrencyInfo(ctx, req.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("invalid origin currency: %w", err)
@@ -93,7 +95,7 @@ func (s *FavoriteService) CheckFavorites(ctx context.Context) (*domain.FavoriteC
 	}
 	
 	// Initialize currency service for rate checking
-	currencyService := NewCurrencyService(s.dynamoDB, s.ExchangeRateAPIKey)
+	currencyService := NewCurrencyService(s.dynamoDB, s.ExchangeRateAPIKey, s.ExchangeRatesAPIKey)
 	
 	var results []domain.FavoriteCheckResult
 	today := time.Now().Format("2006-01-02")

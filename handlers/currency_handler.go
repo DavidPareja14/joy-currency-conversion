@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -114,8 +115,11 @@ func (h *CurrencyHandler) History(w http.ResponseWriter, r *http.Request) {
 	// Get historical rates
 	rates, source, err := h.awsServices.CurrencyService.GetHistoricalRates(r.Context(), origin, destination, startDate, endDate)
 	if err != nil {
-		JSONError(w, http.StatusUnprocessableEntity, "No historical data available", "NO_DATA_AVAILABLE")
+		JSONError(w, http.StatusUnprocessableEntity, fmt.Sprintf("No historical data available %s", err.Error()), "NO_DATA_AVAILABLE")
 		return
+	}
+	if origin != "EUR" {
+		originCurrency, _ = h.awsServices.CurrencyService.GetCurrencyInfo(r.Context(), "EUR")
 	}
 
 	response := domain.HistoryResponse{
@@ -126,6 +130,7 @@ func (h *CurrencyHandler) History(w http.ResponseWriter, r *http.Request) {
 		Rates:       rates,
 		Timestamp:   time.Now().UTC(),
 		RatesSource: source,
+		Message: "I'm sorry, for now the origin must alway be the EUR code",
 	}
 
 	JSONResponse(w, http.StatusOK, response)

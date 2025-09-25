@@ -17,18 +17,27 @@ import (
 type CurrencyService struct {
 	dynamoDB *dynamodb.DynamoDB
 	ExchangeRateAPIKey string
+	ExchangeRatesAPIKey string
 }
 
 // NewCurrencyService creates a new CurrencyService
-func NewCurrencyService(dynamoDB *dynamodb.DynamoDB, exchangeRateAPIKey string) *CurrencyService {
+func NewCurrencyService(dynamoDB *dynamodb.DynamoDB, exchangeRateAPIKey, echangeRatesAPIKey string) *CurrencyService {
 	return &CurrencyService{
 		dynamoDB: dynamoDB,
 		ExchangeRateAPIKey: exchangeRateAPIKey,
+		ExchangeRatesAPIKey: echangeRatesAPIKey,
 	}
 }
 
 type exchangeRateResponse struct {
 	ConversionRate float64 `json:"conversion_rate"`
+}
+
+type exchangeRatesResponse struct {
+	Historical bool               `json:"historical"`
+	Date       string             `json:"date"`
+	Base       string             `json:"base"`
+	Rates      map[string]float64 `json:"rates"`
 }
 
 // GetExchangeRate returns the current exchange rate between two currencies
@@ -140,6 +149,7 @@ func (s *CurrencyService) GetHistoricalRates(ctx context.Context, origin, destin
 	// Other client used https://manage.exchangeratesapi.io/
 	
 	// For now, return mock data
+	/*
 	var rates []domain.HistoryRate
 	current := startDate
 	for current.Before(endDate) || current.Equal(endDate) {
@@ -154,8 +164,61 @@ func (s *CurrencyService) GetHistoricalRates(ctx context.Context, origin, destin
 		})
 		current = current.AddDate(0, 0, 1)
 	}
+	*/
+	fmt.Printf("*** End date: %s and Start date: %s", startDate, endDate)
+	if startDate.After(time.Now()) || endDate.After(time.Now()) {
+		return []domain.HistoryRate{}, "", fmt.Errorf("the start date and end date must not be greater than the current date")
+	}
+
+	if startDate.After(endDate) {
+		return []domain.HistoryRate{}, "", fmt.Errorf("the start date must not be greater than end date")
+	}
+
+	if endDate.Sub(startDate).Hours() / 24 > 5 {
+		return []domain.HistoryRate{}, "", fmt.Errorf("the difference between start date and end date must not be greater than 5")
+	}
+	var rates []domain.HistoryRate
+	current := startDate
+	for current.Before(endDate) || current.Equal(endDate) {
+
+		// No wokr the query param base and symbols, by the fault, the base is EUR, i think i can't use the endpoint with another base
+		url := fmt.Sprintf("https://api.exchangeratesapi.io/v1/%s?access_key=%s&base=%s&symbols=%s", current.Format("2006-01-02"), s.ExchangeRatesAPIKey, "EUR", destination)
+
+		// Make the GET request
+		resp, err := http.Get(url)
+		if err != nil {
+			return []domain.HistoryRate{}, "", fmt.Errorf("error when get the historical data for %s to %s, date: %s", origin, destination, current)
+		}
+		defer resp.Body.Close()
+
+		// Check the HTTP status code
+		if resp.StatusCode != http.StatusOK {
+			return []domain.HistoryRate{}, "", fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, resp.Status)
+		}
+
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return []domain.HistoryRate{}, "", fmt.Errorf("error reading response body: %v", err)
+		}
+
+		var exchangeRatesResponse exchangeRatesResponse
+		err = json.Unmarshal(body, &exchangeRatesResponse)
+		if err != nil {
+			return []domain.HistoryRate{}, "", fmt.Errorf("error unmarshalling response body: %v", err)
+		}
+
+
+		
+		rates = append(rates, domain.HistoryRate{
+			Date: current.Format("2006-01-02"),
+			Rate: exchangeRatesResponse.Rates[destination],
+		})
+		current = current.AddDate(0, 0, 1)
+		time.Sleep(1 * time.Second)
+	}
 	
-	return rates, "mock-provider", nil
+	return rates, "api.exchangeratesapi.io", nil
 }
 
 // GetForecast returns a forecast for the next day's exchange rate
