@@ -176,7 +176,7 @@ func (h *CurrencyHandler) GetDestinations(w http.ResponseWriter, r *http.Request
 	// Get supported destinations
 	destinations, source, err := h.awsServices.CurrencyService.GetSupportedDestinations(r.Context(), origin)
 	if err != nil {
-		JSONError(w, http.StatusNotFound, "No destinations available", "NO_DESTINATIONS")
+		JSONError(w, http.StatusNotFound, "No destinations available, for now, only EUR code is supported", "NO_DESTINATIONS")
 		return
 	}
 

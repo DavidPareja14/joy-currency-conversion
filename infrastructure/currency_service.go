@@ -365,14 +365,6 @@ func (s *CurrencyService) GetSupportedDestinations(ctx context.Context, origin s
 
 	// Mock supported destinations
 	destinations := map[string][]domain.Currency{
-		"COP": {
-			{Code: "USD", Country: "United States"},
-			{Code: "EUR", Country: "Eurozone"},
-		},
-		"USD": {
-			{Code: "COP", Country: "Colombia"},
-			{Code: "EUR", Country: "Eurozone"},
-		},
 		"EUR": {
 			{Code: "USD", Country: "United States"},
 			{Code: "COP", Country: "Colombia"},
