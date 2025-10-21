@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	name = "EXCHANGE_RATE_API_KEY"
+	name = "/exchange-rate/api-key"
 )
 
 type Config struct {
