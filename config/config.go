@@ -40,7 +40,7 @@ func LoadConfig() (*Config, error) {
         WithDecryption: aws.Bool(true),
     })
     if err != nil {
-        return &Config{}, fmt.Errorf("EXCHANGE_RATE_API_KEY is not set")
+        return &Config{}, fmt.Errorf("EXCHANGE_RATE_API_KEY is not set, Error: %w", err)
     }
 
     exchangeKey := *param.Parameter.Value
