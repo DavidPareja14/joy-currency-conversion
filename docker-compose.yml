@@ -9,3 +9,4 @@ services:
     environment:
       - EXCHANGE_RATE_API_KEY=${EXCHANGE_RATE_API_KEY}
       - EXCHANGE_RATES_API_KEY=${EXCHANGE_RATES_API_KEY}
+      - AWS_REGION=us-east-1
