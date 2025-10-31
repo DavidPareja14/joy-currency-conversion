@@ -1,7 +1,6 @@
 package config
 
 import (
-	// "context"
 	"context"
 	"fmt"
 	"os"
@@ -9,9 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	// "github.com/aws/aws-sdk-go-v2/aws"
-	// "github.com/aws/aws-sdk-go-v2/config"
-	// "github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 const (
@@ -30,7 +26,7 @@ func LoadConfig() (*Config, error) {
 	// 	return &Config{}, fmt.Errorf("EXCHANGE_RATE_API_KEY is not set")
 	// }
 
-	//Fetching secrets directly from AWS Parameter Store
+	// Fetching secrets directly from AWS Parameter Store
 	ctx := context.TODO()
 
     // Load AWS default configuration (uses EC2 IAM role automatically)
