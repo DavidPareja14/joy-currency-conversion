@@ -10,12 +10,17 @@ import (
 	"github.com/joy-currency-conversion-private/config"
 	"github.com/joy-currency-conversion-private/handlers"
 	"github.com/joy-currency-conversion-private/infrastructure"
+	"github.com/joy-currency-conversion-private/infrastructure/db"
 )
 
 func main() {
 	configuratios, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
+	}
+
+	if err := db.Connect(); err != nil {
+		log.Fatalf("db connect: %v", err)
 	}
 
 	// Initialize AWS services

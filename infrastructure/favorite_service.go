@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/google/uuid"
 	"github.com/joy-currency-conversion-private/domain"
+	"github.com/joy-currency-conversion-private/infrastructure/db"
 )
 
 // FavoriteService implements domain.FavoriteService using DynamoDB
@@ -45,6 +46,15 @@ func (s *FavoriteService) SaveFavorite(ctx context.Context, req *domain.Favorite
 	destCurrency, err := currencyService.GetCurrencyInfo(ctx, req.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("invalid destination currency: %w", err)
+	}
+
+	// Insert into DB
+	_, err = db.DB.Exec(
+		`INSERT INTO favorites (id, origin, destination, threshold, notify_email) VALUES (?, ?, ?, ?, ?)`,
+		id, originCurrency.Code, destCurrency.Code, req.Threshold, req.NotifyEmail,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
 	}
 	
 	// Create favorite object

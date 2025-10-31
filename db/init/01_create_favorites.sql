@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS favorites (
+  id VARCHAR(50) PRIMARY KEY,
+  origin CHAR(3) NOT NULL,
+  destination CHAR(3) NOT NULL,
+  threshold DECIMAL(20,10) NOT NULL,
+  notify_email VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
