@@ -15,27 +15,27 @@ services:
       - DB_USER=exchange_user
       - DB_PASSWORD=exchange_pass
       - DB_NAME=exchange_db
-    depends_on:
-      - mysql
+#     depends_on:
+#       - mysql
   
-  mysql:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root_pass_change_me
-      MYSQL_DATABASE: exchange_db
-      MYSQL_USER: exchange_user
-      MYSQL_PASSWORD: exchange_pass
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "3306:3306" # optional; useful for local debug (consider removing in prod)
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+#   mysql:
+#     image: mysql:8.0
+#     restart: unless-stopped
+#     environment:
+#       MYSQL_ROOT_PASSWORD: root_pass_change_me
+#       MYSQL_DATABASE: exchange_db
+#       MYSQL_USER: exchange_user
+#       MYSQL_PASSWORD: exchange_pass
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#       - ./db/init:/docker-entrypoint-initdb.d:ro
+#     ports:
+#       - "3306:3306" # optional; useful for local debug (consider removing in prod)
+#     healthcheck:
+#       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
 
-volumes:
-  mysql_data:
+# volumes:
+#   mysql_data:
